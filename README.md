@@ -3,7 +3,7 @@ Go app for Mailgun API Batch Sending on Google Cloud Run
 
 # Development
 
-`go run server.go dev` to run server on port 8000
+`go run server.go dev` to run server locally on port 8000
 
 # Deploy to Your Cloud Run Service
 
