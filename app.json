@@ -1,0 +1,8 @@
+{
+    "env": {
+        "MAILGUN_KEY": {
+            "description": "Specify your Mailgun key",
+            "required": true
+        }
+    }
+}

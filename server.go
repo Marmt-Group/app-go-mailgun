@@ -3,11 +3,12 @@ package main
 import (
 	"html/template"
 	"io"
+	"os"
 	"net/http"
 	"github.com/labstack/echo"
 )
 
-// TemplateRenderer is a custom html/template renderer for Echo framework
+// Template html/template renderer
 type Template struct {
     templates *template.Template
 }
@@ -18,11 +19,14 @@ func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Con
 }
 
 // Route function
-func Hello(c echo.Context) error {
-    return c.Render(http.StatusOK, "hello", "World")
+func Index(c echo.Context) error {
+    return c.Render(http.StatusOK, "index", "World")
 }
 
 func main() {
+	// mailGunKey := os.Getenv("MAILGUN_KEY")
+	port := os.Args[1]
+
 	e := echo.New()
 	t := &Template{
 		templates: template.Must(template.ParseGlob("./public/views/*.html")),
@@ -30,7 +34,13 @@ func main() {
 	e.Renderer = t
 
 	// Routes
-	e.GET("/", Hello)
+	e.GET("/", Index)
 
-	e.Logger.Fatal(e.Start(":8080"))
+	
+	if port == "dev" {
+		e.Logger.Fatal(e.Start(":8000"))
+	} else {
+		e.Logger.Fatal(e.Start(":8080"))
+	}
+	
 }

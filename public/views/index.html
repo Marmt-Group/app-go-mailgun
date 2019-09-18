@@ -1,0 +1,12 @@
+{{define "index"}}
+
+Hello, {{.}}!
+
+<form action="/upload" method="post" enctype="multipart/form-data">
+    Name: <input type="text" name="name"><br>
+    Email: <input type="email" name="email"><br>
+    Files: <input type="file" name="file"><br><br>
+    <input type="submit" value="Submit">
+</form>
+
+{{end}}
