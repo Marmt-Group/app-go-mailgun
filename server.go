@@ -1,27 +1,28 @@
 package main
 
 import (
+	"fmt"
+	"github.com/labstack/echo"
 	"html/template"
 	"io"
-	"os"
 	"net/http"
-	"github.com/labstack/echo"
+	"os"
 )
 
 // Template html/template renderer
 type Template struct {
-    templates *template.Template
+	templates *template.Template
 }
 
 // Render renders a template document
 func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
-    return t.templates.ExecuteTemplate(w, name, data)
+	return t.templates.ExecuteTemplate(w, name, data)
 }
 
 // POST Route function
 func upload(c echo.Context) error {
 	// Read form fields
-	key := c.FormValue("mailgunKey")
+	// key := c.FormValue("mailgunKey")
 
 	//-----------
 	// Read file
@@ -57,7 +58,7 @@ func upload(c echo.Context) error {
 
 // GET Route function
 func index(c echo.Context) error {
-    return c.Render(http.StatusOK, "index", "World")
+	return c.Render(http.StatusOK, "index", "World")
 }
 
 func main() {
@@ -65,8 +66,10 @@ func main() {
 	port := os.Args[1]
 
 	e := echo.New()
+	e.Static("/static", "assets")
+	
 	t := &Template{
-		templates: template.Must(template.ParseGlob("./public/views/*.html")),
+		templates: template.Must(template.ParseGlob("./views/*.html")),
 	}
 	e.Renderer = t
 
@@ -74,11 +77,10 @@ func main() {
 	e.GET("/", index)
 	e.POST("/upload", upload)
 
-	
 	if port == "dev" {
 		e.Logger.Fatal(e.Start(":8000"))
 	} else {
 		e.Logger.Fatal(e.Start(":8080"))
 	}
-	
+
 }
