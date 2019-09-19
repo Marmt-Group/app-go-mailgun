@@ -3,22 +3,59 @@
 class MailgunForm extends React.Component {
     constructor(props) {
         super(props);
+        this.state = {
+            fileName: '',
+            response: '',
+            showResponse: false,
+            showError: false
+        }
+        this.fileInput = React.createRef();
+    }
+
+    handleFileUpdate = (event) => {
+        this.setState({ fileName: event.target.files[0].name });
+    }
+
+    handleDismiss = () => {
+        this.setState({ showResponse: false })
+    }
+
+    handleSubmit = (event) => {
+        event.preventDefault()
+
+        const formData = new FormData()
+        formData.append('file', this.fileInput.current.files[0])
+
+       return fetch('/upload', {
+            method: 'POST',
+            mode: 'same-origin',
+            cache: 'no-cache',
+            credentials: 'same-origin',
+            body: formData
+        })
+        .then(response => response.text())
+        .then(message => {
+            this.setState({ response: message, showResponse: true})
+        })
+        .catch(error => {
+            this.setState({ response: error, showResponse: true, showError: true})
+        });
     }
 
     render() {
 
         return (
             <div className="container form-group">
-                <form action="/upload" method="post" enctype="multipart/form-data">
+                <form onSubmit={this.handleSubmit}>
                     <div className="field is-grouped">
-                        <p className="control">
+                        {/* <div className="control">
                             <input className="input" type="text" name="mailgunKey" placeholder="Insert your Mailgun key" />
-                        </p>
+                        </div> */}
 
-                        <p className="control">
+                        <div className="control">
                             <div className="file has-name">
                                 <label className="file-label">
-                                    <input className="file-input" type="file" name="file" required />
+                                    <input className="file-input" type="file" onChange={this.handleFileUpdate} ref={this.fileInput} required />
                                         <span className="file-cta">
                                             <span className="file-icon">
                                                 <i className="fas fa-upload"></i>
@@ -28,17 +65,24 @@ class MailgunForm extends React.Component {
                                             </span>
                                         </span>
                                         <span className="file-name">
-                                            Screen Shot 2017-07-29 at 15.54.25.png
+                                            {this.state.fileName ? this.state.fileName : 'Name of file'}
                                         </span>
                                 </label>
                             </div>
-                        </p>
+                        </div>
 
-                        <p className="control">
-                            <input className="button is-primary" type="Submit" value="Submit" />
-                        </p>
+                        <div className="control">
+                            <button className="button is-primary" type="Submit">Submit</button>
+                        </div>
                     </div>
                 </form>
+
+                {this.state.showResponse &&
+                    <div className={`notification ${this.state.showError ? 'is-danger' : 'is-primary'} `}>
+                        <button className="delete" onClick={this.handleDismiss}></button>
+                        {this.state.response}
+                    </div>
+                }
             </div>
         );
     }
