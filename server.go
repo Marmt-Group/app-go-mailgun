@@ -98,7 +98,6 @@ func index(c echo.Context) error {
 
 func main() {
 	// mailGunKey := os.Getenv("MAILGUN_KEY")
-	port := os.Args[1]
 
 	e := echo.New()
 	e.Static("/static", "assets")
@@ -112,10 +111,6 @@ func main() {
 	e.GET("/", index)
 	e.POST("/upload", upload)
 
-	if port == "dev" {
-		e.Logger.Fatal(e.Start(":8000"))
-	} else {
-		e.Logger.Fatal(e.Start(":8080"))
-	}
+	e.Logger.Fatal(e.Start(":8080"))
 
 }
