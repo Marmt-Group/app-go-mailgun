@@ -4,13 +4,14 @@
 
 .form-group .field {
     display: flex;
+    align-items: center;
     flex-direction: column;
     justify-content: center;
     margin: 2em;
 }
 
-.form-group .control, .form-group .file {
-    margin: 1em;
+.form-group .control {
+    margin: 1em !important;
 }
 
 .footer {
