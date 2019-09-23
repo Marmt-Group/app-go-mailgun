@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"encoding/csv"
-	"fmt"
-	"github.com/labstack/echo"
+	// "fmt"
 	"github.com/mailgun/mailgun-go/v3"
+	"github.com/labstack/echo/v4"
+  	"github.com/labstack/echo/v4/middleware"
 	"html/template"
 	"io"
 	"log"
@@ -19,87 +20,97 @@ type Template struct {
 	templates *template.Template
 }
 
+type Item struct {
+	email string
+	company string
+}
+
+type Data struct {
+	Record []Item
+}
+
 // Render renders a template document
 func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
 	return t.templates.ExecuteTemplate(w, name, data)
 }
 
-// Mailgun batch send function
-func SendTemplateMessage(file string) (string, error) {
-	mg := mailgun.NewMailgun(os.Getenv("MAILGUN_DOMAIN"), os.Getenv("MAILGUN_KEY"))
-	m := mg.NewMessage(
-		"Excited User>"+"<"+os.Getenv("SENDER_EMAIL")+">",
-		"Hey %recipient.first%",
-		"If you wish to unsubscribe, click http://mailgun/unsubscribe/%recipient.id%",
-	) // IMPORTANT: No To:-field recipients!
+// POST Route Mailgun batch send function
+func sendTemplateMessage(c echo.Context) error {
+
+	mg_domain := os.Getenv("MAILGUN_DOMAIN") 
+	mg_key := os.Getenv("MAILGUN_KEY")
+
+	// Source file
+	file, err := c.FormFile("file")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Open the file
-	csvfile, err := os.Open(file)
+	src, err := file.Open()
 	if err != nil {
-		log.Fatalln("Couldn't open the csv file", err)
+		log.Fatal(err)
 	}
-	// Parse the file
-	r := csv.NewReader(csvfile)
+	defer src.Close()
+
+	// Read the file
+	r := csv.NewReader(src)
+	index := 0
+
+	// TODO: set up secrets in Cloud Run
+
+	// Setup Mailgun message
+	mg := mailgun.NewMailgun(mg_domain, mg_key)
+	m := mg.NewMessage(
+		"David J. Davis <davidjamesdavis.djd@gmail.com>",
+		"Hey %recipient.first%",
+		"I would like to discuss and opportunity",
+		"admin@marmt.io",
+	) // IMPORTANT: No To:-field recipients!
 
 	// Iterate through the records
 	for {
 		// Read each record from csv
 		record, err := r.Read()
+
 		if err == io.EOF {
 			break
 		}
+
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("Question: %s Answer %s\n", record[0], record[1])
+
+		m.AddRecipientAndVariables(record[8], map[string]interface{}{ // record indexes according to your csv records
+			"first": record[3], // record indexes according to your csv records
+			"id":    index,
+		})
+
+		index++
 	}
-
-	m.AddRecipientAndVariables("bob@example.com", map[string]interface{}{
-		"first": "bob",
-		"id":    1,
-	})
-
-	m.AddRecipientAndVariables("alice@example.com", map[string]interface{}{
-		"first": "alice",
-		"id":    2,
-	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
 	_, id, err := mg.Send(ctx, m)
-	return id, err
-}
 
-// POST Route function
-func upload(c echo.Context) error {
-	// Read form fields
-
-	// Source
-	file, err := c.FormFile("file")
 	if err != nil {
-		return err
+		return c.String(500, err.Error())
+	} else {
+		return c.String(http.StatusOK, id)
 	}
-
-	// SendTemplateMessage(file)
-	src, err := file.Open()
-	if err != nil {
-		return err
-	}
-	defer src.Close()
-
-	return c.String(http.StatusOK, fmt.Sprintf("File %s uploaded successfully.", file.Filename))
 }
 
 // GET Route function
 func index(c echo.Context) error {
-	return c.Render(http.StatusOK, "index", "World")
+	return c.Render(http.StatusOK, "index", "")
 }
 
 func main() {
 	// mailGunKey := os.Getenv("MAILGUN_KEY")
 
 	e := echo.New()
+	e.Use(middleware.Logger()) // remove in production
 	e.Static("/static", "assets")
 
 	t := &Template{
@@ -109,7 +120,7 @@ func main() {
 
 	// Routes
 	e.GET("/", index)
-	e.POST("/upload", upload)
+	e.POST("/upload", sendTemplateMessage)
 
 	e.Logger.Fatal(e.Start(":8080"))
 

@@ -48,10 +48,6 @@ class MailgunForm extends React.Component {
             <div className="container form-group">
                 <form onSubmit={this.handleSubmit}>
                     <div className="field is-grouped">
-                        {/* <div className="control">
-                            <input className="input" type="text" name="mailgunKey" placeholder="Insert your Mailgun key" />
-                        </div> */}
-
                         <div className="control">
                             <div className="file has-name">
                                 <label className="file-label">
